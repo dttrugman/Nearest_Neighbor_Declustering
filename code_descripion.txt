@@ -1,0 +1,118 @@
+[0] Codes
+==========
+The codes and test data files are collected in a folder called "cluster_new"
+All files should be placed in the working directory or on the Matlab path.
+
+[1] Code check
+================
+First, please run the program
+>> run_me_first
+It should run for less than a minute, displaying multiple statements: "Geographic distance"
+At the completion, it should produce a plot with the original and declustered test catalogs.
+Please e-mail to Ilya Zaliapin [zal@unr.edu] if this program does not run -- this would mean that some auxiliary programs are missing.
+
+[2] Declustering 
+=================
+The declustering is done by the program
+>> decluster_run
+
+Prior to running the program, please 
+
+a) Input parameters in ll. 5-8. The default values correspond to Southern California. 
+Please select parameters suitable for your catalog (see [3] below).
+
+b) Enter the names of "input_catalog" in l. 12 and "declustered_catalog" in l. 15. These catalogs are Matlab data files with input and output variables. The input file should contain the following 5 variables:
+time -- time of events in fractional years (e.g., 1986.1524)
+Lon, Lat, mag, depth -- event coordinates (depth is in km)
+
+The output file contains the following additional variables:
+
+Outputs of "bp_thinning_fast":
+------------------------------
+ad0         is the vector alpha_i from Step 3 of the algorithm of [Ref 1]
+Pd0         is a vector of parent pointers
+Dd0         is a vector of distances to parents (km)
+Td0         is a vector of times to parents (years)
+Md0         is a vector of parent magnitudes
+
+Outputs of "cluster_analysis":
+------------------------------
+Ifor        is a vector of foreshock indices
+Iaft        is a vector of aftershock indices
+Imain       is a vector of mainshock indices    
+Pfin        is a mainshock pointer (P(i) is index of the mainchosk of the cluster to which event i belongs)
+
+clust is a structure that describes clusters; it has the following fields (one record per cluster):
+
+clust.L     is the number of events in the cluster
+clust.LA    is the number of aftershocks in the cluster
+clust.LF    is the number of foreshocks in the cluster
+clust.m     is the mainshock magnitude
+
+clust.mA    is the maximal aftershocks magnitude
+clust.distA is the average distance from aftershocks to the mainshock
+clust.mF    is the maximal foreshocks magnitude
+clust.distF is the average distance from foreshocks to the mainshock
+
+clust.dur   is the total cluster duration in years
+clust.durF  is the foreshock duration
+clust.durA  is the aftershock duration
+clust.durFa is the average time from a foreshock to the mainshock
+clust.durAa is the average time from the mainshock to a foreshock
+    
+clust.E     is the total seismic moment, Nm
+clust.EM    is the mainshock moment, Nm
+clust.EF    is the total foreshock moment, Nm
+clust.EA    is the total aftshock moment, Nm
+
+[3] Parameter selection
+=======================
+
+[3.1] df is the fractal dimension of hypocenters/epicenters. If you work with epicenters, set depths to 0.
+
+[3.2] eta0 is the threshold for removing heavily clustered events (Step 1 of the algorithm of [Ref 1]). It should roughly correspond to the boundary between the clustered and background modes of the nearest-neighbor proximity calculated with b=0. To fit this parameter, run the following commands and select the threshold from the histogram:
+
+>> [P,eta,D,T,M]=bp_add_1(time,mag,Lon,Lat,depth,0,df,Inf,1);
+>> histogram(eta)
+
+[3.3] Nboot is the number of catalog reshufflings (Step 2 of the algorithm of [Ref 1]). Nboot = 100 gives reasonable results. 
+
+[3.4] alpha0 is the cluster threshold (Step 4 of the algorithm of [Ref 1]). Usually, its optimal value is within [-1, 1].
+
+
+[4] Varying the number of background events
+============================================
+The time-consuming part of the algorithm is the program "bp_thinning_fast.m". It should be ran once; its output "ad0" corresponds to the normalized nearest-neighbor proximity alpha_i (Step 3 of the algorithm of [Ref 1]). This output can be used to quickly produce alternative stochastic realizations of declustering and vary the number of background events. For this, run
+
+>> alpha0 = 0.5; % set the desired value of alpha0 here
+>> p = 10.^(ad0+alpha0);
+>> I = p>rand(size(p));
+
+This code implements Eq. (9) in [Ref 1], producing declustering with a given alpha0. I is a vector of indices of background events. 
+
+[5] Background vs. mainshocks
+=============================
+As discussed above, program "bp_thinning_fast" calculates a vector "ad0", which can be used to generate alternative realizations of background events. To create clusters of events and find mainshocks (the largest event in a cluster), run "cluster_analisys"; this script (not a function) assumes that alpha0 is already defined in the Matlab workspace. You can also define alpha0 explicitly within "cluster_analysis" by uncommenting l. 6.
+
+Reference
+==========
+[Ref 1]: Zaliapin, I. and Y. Ben-Zion (2020) Earthquake declustering using the nearest‐neighbor approach in space‐time‐magnitude domain. J. Geophys. Res.: Solid Earth, e53991, doi:10.1029/2018JB017120
+Main text: https://zaliapin.github.io/pubs/Zaliapin_Ben-Zion_JGR20.pdf
+Supplementary Material: https://zaliapin.github.io/pubs/ZBZ_JGR2020_SI.pdf
+Sample declustered catalog: https://zaliapin.github.io/pubs/ZBZ_JGR2020_data.txt
+Catalog description: https://zaliapin.github.io/pubs/ZBZ_JGR2020_data_description.txt
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+ 
